@@ -1,34 +1,25 @@
-const storageKey = "gutInflammationTracker.v1";
+const storageKey = "gutInflammationTracker.v2";
 const todayIso = new Date().toISOString().slice(0, 10);
 const categories = ["Definitely keep", "Trial pause", "Maybe later", "Stop"];
 const scoreNames = ["Bloating", "Burping", "Reflux", "Gas", "Energy", "Mood"];
 const habits = ["7+ hours sleep", "8,000+ steps", "Strength training", "Omega-3", "Protein goal", "Hydration", "Low alcohol", "Stress management", "Walk after meal"];
 
-const sampleData = {
+const emptyData = {
   phase: "Phase 1 Calm Gut",
-  today: { date: todayIso, notes: "Sample: less bloating after a slow walk after lunch.", scores: { Bloating: 4, Burping: 3, Reflux: 2, Gas: 5, Energy: 7, Mood: 7 } },
-  treatments: [
-    { name: "Fixan / rifaximin", start: "2026-06-24", end: "2026-07-08", dose: "As prescribed with meals", why: "SIBO/IBS treatment phase", result: "In progress; watching bloating and gas" },
-    { name: "Mentsii / peppermint oil", start: "2026-06-20", end: "", dose: "Before meals as tolerated", why: "Calm cramping and motility discomfort", result: "Helpful on high-gas days" },
-    { name: "Probiotics", start: "2026-07-10", end: "", dose: "Low dose trial", why: "Rebuild phase support", result: "Planned" },
-    { name: "D-mannose", start: "2026-06-12", end: "", dose: "Daily", why: "Urinary tract support", result: "No side effects noted" },
-    { name: "Omega-3", start: "2026-06-01", end: "", dose: "With breakfast", why: "Inflammation support", result: "Keep" },
-    { name: "Magnesium", start: "2026-06-01", end: "", dose: "Evening", why: "Sleep, stress, bowel regularity", result: "Helps sleep" }
-  ],
-  symptoms: [
-    { date: todayIso, morning: "mild", evening: "bloated", bowel: "mixed", triggers: "Coffee, bread", notes: "Energy better than yesterday", photos: "Morning photo placeholder · Evening photo placeholder" }
-  ],
-  labs: ["SIBO breath test", "H. pylori test", "Celiac blood test", "CBC", "CMP", "Vitamin D", "B12", "Ferritin/iron", "hs-CRP", "Lipid panel"].map((name) => ({ name, ordered: "", completed: "", result: "", notes: "", done: false, followUp: false })),
-  foods: ["Eggs", "Coffee", "Wine", "Bread", "Fruit", "Protein powder", "Spicy foods"].map((food, index) => ({ food, reaction: index % 2 ? "Gas / reflux" : "Bloating", severity: [3, 6, 7, 8, 4, 5, 6][index], time: "1–3 hours", status: index > 1 ? "avoid" : "questionable" })),
-  supplements: [
-    { name: "Omega-3", dose: "Daily", purpose: "Inflammation support", start: "2026-06-01", helps: "yes", sideEffects: "None", decision: "Definitely keep" },
-    { name: "Magnesium", dose: "Evening", purpose: "Sleep and regularity", start: "2026-06-01", helps: "yes", sideEffects: "Loose stool if too much", decision: "Definitely keep" },
-    { name: "Protein powder", dose: "1 scoop", purpose: "Protein goal", start: "2026-06-15", helps: "unsure", sideEffects: "Possible bloating", decision: "Trial pause" }
-  ],
-  habits: Object.fromEntries(habits.map((habit, index) => [habit, index < 4]))
+  today: {
+    date: todayIso,
+    notes: "",
+    scores: Object.fromEntries(scoreNames.map((name) => [name, 0]))
+  },
+  treatments: [],
+  symptoms: [],
+  labs: [],
+  foods: [],
+  supplements: [],
+  habits: Object.fromEntries(habits.map((habit) => [habit, false]))
 };
 
-let state = JSON.parse(localStorage.getItem(storageKey) || "null") || sampleData;
+let state = JSON.parse(localStorage.getItem(storageKey) || "null") || emptyData;
 const save = () => localStorage.setItem(storageKey, JSON.stringify(state));
 const text = (value) => value || "—";
 
@@ -73,11 +64,14 @@ const fieldSets = {
 function openModal(type) {
   const modal = document.getElementById("entryModalTemplate").content.cloneNode(true).querySelector("dialog");
   modal.querySelector("#modalTitle").textContent = `Add ${type.slice(0, -1)}`;
-  modal.querySelector("#modalFields").innerHTML = fieldSets[type].map((field) => `<label>${field.replace(/([A-Z])/g, " $1")}<input name="${field}" placeholder="${field === "decision" ? categories.join(' / ') : ''}"></label>`).join("");
+  modal.querySelector("#modalFields").innerHTML = fieldSets[type].map((field) => `<label>${field.replace(/([A-Z])/g, " $1")}<input name="${field}" placeholder="${field === "decision" ? categories.join(" / ") : ""}"></label>`).join("");
   modal.querySelector("#modalSave").addEventListener("click", (event) => {
     event.preventDefault();
     const entry = Object.fromEntries(new FormData(modal.querySelector("form")).entries());
-    if (type === "labs") entry.followUp = false;
+    if (type === "labs") {
+      entry.done = false;
+      entry.followUp = false;
+    }
     state[type].push(entry);
     save();
     renderAll();
@@ -108,7 +102,7 @@ document.getElementById("todayForm").addEventListener("submit", (event) => {
 });
 document.addEventListener("change", (event) => {
   if (event.target.dataset.habit) { state.habits[event.target.dataset.habit] = event.target.checked; save(); renderHabits(); }
-  if (event.target.dataset.labDone) { state.labs[event.target.dataset.labDone].done = event.target.checked; save(); }
-  if (event.target.dataset.labFollow) { state.labs[event.target.dataset.labFollow].followUp = event.target.checked; save(); }
+  if (event.target.dataset.labDone !== undefined) { state.labs[event.target.dataset.labDone].done = event.target.checked; save(); }
+  if (event.target.dataset.labFollow !== undefined) { state.labs[event.target.dataset.labFollow].followUp = event.target.checked; save(); }
 });
 document.querySelectorAll("[data-add]").forEach((button) => button.addEventListener("click", () => openModal(button.dataset.add)));

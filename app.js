@@ -18,14 +18,22 @@ const text = (value) => value || "—";
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
 
 function setTheme(theme) {
-  document.documentElement.dataset.theme = theme;
+  document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem(themeKey, theme);
   const button = document.getElementById("themeToggle");
-  button.textContent = theme === "dark" ? "☀" : "☾";
-  button.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  if (button) {
+    button.textContent = theme === "dark" ? "☀" : "☾";
+    button.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  }
 }
-setTheme(localStorage.getItem(themeKey) || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
-document.getElementById("themeToggle").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark"));
+
+function toggleTheme() {
+  setTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+}
+
+setTheme(localStorage.getItem(themeKey) || (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"));
+const themeToggle = document.getElementById("themeToggle");
+if (themeToggle) themeToggle.onclick = toggleTheme;
 
 document.getElementById("todayDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 document.getElementById("phaseSelect").value = state.phase;
@@ -34,12 +42,32 @@ document.getElementById("dailyNotes").value = state.today.notes || "";
 function empty(message) { return `<div class="empty-state">${message}</div>`; }
 function detail(label, value) { return `<div class="detail"><span>${label}</span><strong>${escapeHtml(text(value))}</strong></div>`; }
 
+function updateRangeAppearance(input) {
+  const percent = (Number(input.value) / 10) * 100;
+  input.style.setProperty("--range-progress", `${percent}%`);
+}
+
 function renderScores() {
-  document.getElementById("scoreGrid").innerHTML = scoreNames.map((name) => `
+  const grid = document.getElementById("scoreGrid");
+  grid.innerHTML = scoreNames.map((name) => `
     <label class="score-card">${name}
       <output id="${name}Out">${state.today.scores[name] ?? 0}</output>
-      <input type="range" min="0" max="10" value="${state.today.scores[name] ?? 0}" data-score="${name}" />
+      <input type="range" min="0" max="10" step="1" value="${state.today.scores[name] ?? 0}" data-score="${name}" aria-label="${name} score" />
     </label>`).join("");
+
+  grid.querySelectorAll('input[type="range"]').forEach((input) => {
+    updateRangeAppearance(input);
+    const updateScore = () => {
+      const name = input.dataset.score;
+      const value = Number(input.value);
+      state.today.scores[name] = value;
+      document.getElementById(`${name}Out`).textContent = value;
+      updateRangeAppearance(input);
+      save();
+    };
+    input.addEventListener("input", updateScore);
+    input.addEventListener("change", updateScore);
+  });
 }
 
 function renderEntries() {
@@ -97,9 +125,6 @@ function renderAll() { renderScores(); renderEntries(); renderSupplements(); ren
 renderAll();
 
 document.getElementById("phaseSelect").addEventListener("change", (event) => { state.phase = event.target.value; save(); });
-document.getElementById("todayForm").addEventListener("input", (event) => {
-  if (event.target.dataset.score) { state.today.scores[event.target.dataset.score] = event.target.value; document.getElementById(`${event.target.dataset.score}Out`).textContent = event.target.value; }
-});
 document.getElementById("todayForm").addEventListener("submit", (event) => {
   event.preventDefault(); state.today.date = todayIso; state.today.notes = document.getElementById("dailyNotes").value; save();
   document.getElementById("saveStatus").textContent = "Saved in this browser";

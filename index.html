@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Gut & Inflammation Tracker is a private browser-based dashboard for symptoms, treatments, labs, food triggers, supplements, and daily habits." />
+  <title>Gut & Inflammation Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="container header-content">
+      <div>
+        <p class="eyebrow">Personal wellness log</p>
+        <h1>Gut & Inflammation Tracker</h1>
+        <p class="header-copy">A calm, private dashboard for SIBO/IBS treatment notes, symptoms, labs, supplements, food reactions, and daily anti-inflammatory habits.</p>
+      </div>
+      <div class="date-card" aria-label="Today's date">
+        <span>Today</span>
+        <strong id="todayDate">Loading…</strong>
+      </div>
+    </div>
+  </header>
+
+  <nav class="section-nav top-tabs" aria-label="Dashboard sections">
+    <div class="container nav-scroll">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#symptoms">Symptoms</a>
+      <a href="#labs">Labs</a>
+      <a href="#foods">Foods</a>
+      <a href="#supplements">Supplements</a>
+      <a href="#habits">Habits</a>
+    </div>
+  </nav>
+
+  <main class="container app-shell">
+    <section id="dashboard" class="card hero-dashboard">
+      <div class="card-heading">
+        <div>
+          <p class="eyebrow">Daily check-in</p>
+          <h2>Dashboard</h2>
+        </div>
+        <label class="phase-select">Current treatment phase
+          <select id="phaseSelect">
+            <option>Phase 1 Calm Gut</option>
+            <option>Phase 2 Rebuild</option>
+            <option>Phase 3 Optimize</option>
+          </select>
+        </label>
+      </div>
+      <form id="todayForm" class="stacked-form">
+        <div class="score-grid" id="scoreGrid"></div>
+        <label>Notes
+          <textarea id="dailyNotes" rows="4" placeholder="Meals, stress, cycle, medications, wins, or anything notable…"></textarea>
+        </label>
+        <div class="form-actions">
+          <button type="submit">Save today</button>
+          <span id="saveStatus" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </section>
+
+    <section id="timeline" class="card">
+      <div class="card-heading">
+        <div><p class="eyebrow">Protocol notes</p><h2>Treatment Timeline</h2></div>
+        <button class="small-button" data-add="treatments">Add treatment</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Treatment</th><th>Dates</th><th>Dose/instructions</th><th>Why</th><th>Result/outcome</th></tr></thead><tbody id="treatmentsRows"></tbody></table></div>
+    </section>
+
+    <section id="symptoms" class="card">
+      <div class="card-heading">
+        <div><p class="eyebrow">Daily pattern</p><h2>Symptom Tracker</h2></div>
+        <button class="small-button" data-add="symptoms">Add log</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Date</th><th>Morning belly</th><th>Evening belly</th><th>Bowel movement</th><th>Trigger foods</th><th>Notes</th><th>Photos</th></tr></thead><tbody id="symptomsRows"></tbody></table></div>
+    </section>
+
+    <section id="labs" class="card">
+      <div class="card-heading">
+        <div><p class="eyebrow">Testing</p><h2>Labs & Tests</h2></div>
+        <button class="small-button" data-add="labs">Add test</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Done</th><th>Test name</th><th>Ordered</th><th>Completed</th><th>Result</th><th>Notes</th><th>Follow-up</th></tr></thead><tbody id="labsRows"></tbody></table></div>
+    </section>
+
+    <section id="foods" class="card">
+      <div class="card-heading">
+        <div><p class="eyebrow">Food detective</p><h2>Food Triggers</h2></div>
+        <button class="small-button" data-add="foods">Add food</button>
+      </div>
+      <div class="table-wrap"><table><thead><tr><th>Food</th><th>Reaction</th><th>Severity</th><th>Time to symptoms</th><th>Status</th></tr></thead><tbody id="foodsRows"></tbody></table></div>
+    </section>
+
+    <section id="supplements" class="card">
+      <div class="card-heading">
+        <div><p class="eyebrow">Keep, pause, revisit</p><h2>Supplement Review</h2></div>
+        <button class="small-button" data-add="supplements">Add supplement</button>
+      </div>
+      <div id="supplementBoard" class="supplement-board"></div>
+    </section>
+
+    <section id="habits" class="card">
+      <div class="card-heading">
+        <div><p class="eyebrow">Inflammation support</p><h2>Habits / Inflammation Checklist</h2></div>
+        <span class="habit-count" id="habitCount">0/9 complete</span>
+      </div>
+      <div id="habitGrid" class="habit-grid"></div>
+    </section>
+  </main>
+
+  <nav class="bottom-tabs" aria-label="Primary app tabs">
+    <a href="#dashboard"><span>⌂</span>Dashboard</a>
+    <a href="#symptoms"><span>◐</span>Symptoms</a>
+    <a href="#timeline"><span>↗</span>Timeline</a>
+    <a href="#labs"><span>☑</span>Labs</a>
+    <a href="#supplements"><span>✦</span>Supps</a>
+  </nav>
+
+  <template id="entryModalTemplate">
+    <dialog class="entry-modal">
+      <form method="dialog" class="modal-card">
+        <div class="card-heading"><h2 id="modalTitle">Add entry</h2><button class="icon-button" value="cancel" aria-label="Close">×</button></div>
+        <div id="modalFields" class="modal-fields"></div>
+        <button id="modalSave" value="default">Save entry</button>
+      </form>
+    </dialog>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
